@@ -13,9 +13,10 @@ var userPwPerpper = "SOMETHING DUMB AND SCRETE"
 type User struct {
 	gorm.Model
 	Name           string
-	Email          string `gorm:"not null;unique_index"`
-	Password       string `gorm:"-"`
-	HashedPassword string `gorm:"not null"`
+	Email          string  `gorm:"not null;unique_index"`
+	Password       string  `gorm:"-"`
+	HashedPassword string  `gorm:"not null"`
+	Tweets         []Tweet `gorm:"many2many:user_tweets"`
 }
 
 type UserService interface {
@@ -25,6 +26,7 @@ type UserService interface {
 	Update(user *User) error
 	Delete(id uint) error
 	Authenticate(email, password string) *User
+	AddTweet(user *User, tweet *Tweet)
 }
 
 type UserGorm struct {
@@ -32,7 +34,7 @@ type UserGorm struct {
 }
 
 func (ug *UserGorm) DestructiveReset() {
-	ug.DropTable(&User{})
+	//ug.DropTable(&User{})
 	ug.AutoMigrate(&User{})
 }
 
@@ -100,4 +102,11 @@ func (ug *UserGorm) Authenticate(email, password string) *User {
 		return nil
 	}
 	return foundUser
+}
+
+//Tweet Functions
+
+func (ug *UserGorm) AddTweet(user *User, tweet *Tweet) {
+	ug.Model(&user).Association("Tweets")
+	ug.Model(&user).Association("Tweets").Append(tweet)
 }

@@ -6,9 +6,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/EvanLib/Twitter_Clone_Backend/authentication"
-	"github.com/EvanLib/Twitter_Clone_Backend/controllers"
-	"github.com/EvanLib/Twitter_Clone_Backend/models"
+	"github.com/EvanLib/TwitterClone2/authentication"
+	"github.com/EvanLib/TwitterClone2/controllers"
+	"github.com/EvanLib/TwitterClone2/models"
+	"github.com/codegangsta/negroni"
 	"github.com/gorilla/mux"
 )
 
@@ -22,18 +23,28 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	tg.Debug()
+	ug.DestructiveReset()
 	//Create controllers
-	tweetsController := controllers.NewTweetsController(tg)
+	tweetsController := controllers.NewTweetsController(tg, ug)
 	usersController := controllers.NewUsers(ug)
+	//Negroni middleware
 
 	tg.DatabaseStuff()
 	//Create mux
 	r := mux.NewRouter()
 	r.HandleFunc("/", Index)
 	r.HandleFunc("/api", Index)
-	r.HandleFunc("/api/tweets", tweetsController.Index)
+	r.Handle("/api/tweets", negroni.New(
+		negroni.HandlerFunc(authentication.HandlerWithNext),
+		negroni.Wrap(http.HandlerFunc(tweetsController.Index)),
+	)).Methods("GET")
 
-	//Authentication stuff
+	r.Handle("/api/tweets", negroni.New(
+		negroni.HandlerFunc(authentication.HandlerWithNext),
+		negroni.Wrap(http.HandlerFunc(tweetsController.Create)),
+	)).Methods("POST")
+
 	r.HandleFunc("/api/auth/create", usersController.Create)
 	r.HandleFunc("/api/auth/login", usersController.Login).Methods("POST")
 

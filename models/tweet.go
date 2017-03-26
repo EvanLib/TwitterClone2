@@ -20,6 +20,7 @@ type TweetGorm struct {
 type TweetService interface {
 	ByID(id uint) *Tweet
 	GetAll() []Tweet
+	CreateTweet(tweet *Tweet) error
 }
 
 func (tg *TweetGorm) CreateMockTweets() {
@@ -35,6 +36,7 @@ func (tg *TweetGorm) CreateMockTweets() {
 
 func (tg *TweetGorm) DatabaseStuff() {
 	fmt.Println("Tweets Database loaded....")
+	//tg.CreateMockTweets()
 }
 func NewTweetGorm(connectionInfo string) (*TweetGorm, error) {
 	db, err := gorm.Open("mysql", connectionInfo)
@@ -58,6 +60,9 @@ func (tg *TweetGorm) ByID(id uint) *Tweet {
 	return tg.byQuery(tg.DB.Where("id = ?", id))
 }
 
+func (tg *TweetGorm) CreateTweet(tweet *Tweet) error {
+	return tg.DB.Create(tweet).Error
+}
 func (tg *TweetGorm) byQuery(query *gorm.DB) *Tweet {
 	ret := &Tweet{}
 	err := query.First(ret).Error

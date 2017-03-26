@@ -6,8 +6,8 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/EvanLib/Twitter_Clone_Backend/authentication"
-	"github.com/EvanLib/Twitter_Clone_Backend/models"
+	"github.com/EvanLib/TwitterClone2/authentication"
+	"github.com/EvanLib/TwitterClone2/models"
 	_ "github.com/go-sql-driver/mysql"
 )
 

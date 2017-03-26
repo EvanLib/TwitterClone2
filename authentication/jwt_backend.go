@@ -6,10 +6,13 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
+	"github.com/auth0/go-jwt-middleware"
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/dgrijalva/jwt-go/request"
+	"github.com/gorilla/context"
 )
 
 const (
@@ -21,6 +24,10 @@ var (
 	verifyKey *rsa.PublicKey
 	signKey   *rsa.PrivateKey
 )
+
+type MiddleWare struct {
+	*jwtmiddleware.JWTMiddleware
+}
 
 func init() {
 	signBytes, err := ioutil.ReadFile(privKeyPath)
@@ -51,6 +58,20 @@ type UserTest struct {
 	UserName string `json:"username"`
 }
 
+//Midleware
+func NewJWTMiddleWare() *MiddleWare {
+	jwtMiddleware := jwtmiddleware.New(jwtmiddleware.Options{
+		ValidationKeyGetter: func(token *jwt.Token) (interface{}, error) {
+			return verifyKey, nil
+		},
+		SigningMethod: jwt.SigningMethodRS256,
+	})
+
+	return &MiddleWare{
+		JWTMiddleware: jwtMiddleware,
+	}
+}
+
 //Token
 func CreateToken(username string, id uint) (string, error) {
 	// create a signer for rsa 256
@@ -61,7 +82,7 @@ func CreateToken(username string, id uint) (string, error) {
 		&jwt.StandardClaims{
 			// set the expire time
 			// see http://tools.ietf.org/html/draft-ietf-oauth-json-web-token-20#section-4.1.4
-			ExpiresAt: time.Now().Add(time.Minute * 1).Unix(),
+			ExpiresAt: time.Now().Add(time.Minute * 30).Unix(),
 		},
 		id,
 		username,
@@ -121,4 +142,50 @@ func RestrictedHandler(w http.ResponseWriter, r *http.Request) {
 	// Token is valid
 	fmt.Fprintln(w, "Welcome,", token.Claims.(*UserTest).UserName)
 	return
+}
+
+//Negroni function for middleware
+func HandlerWithNext(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
+	err := JWTAuth(w, r)
+
+	// If there was an error, do not call next.
+	if err == nil && next != nil {
+		next(w, r)
+	}
+}
+
+//Extractor
+func FromAuthHeader(r *http.Request) (string, error) {
+	authHeader := r.Header.Get("Authorization")
+	if authHeader == "" {
+		return "", nil
+	}
+
+	authHeaderParts := strings.Split(authHeader, " ")
+	if len(authHeaderParts) != 2 || strings.ToLower(authHeaderParts[0]) != "bearer" {
+		return "", fmt.Errorf("Authorization header format must be Bearer {token}")
+	}
+
+	return authHeaderParts[1], nil
+}
+
+//Auth user via token
+//Set Claims as context
+func JWTAuth(w http.ResponseWriter, r *http.Request) error {
+	//
+	headerToken, err := FromAuthHeader(r)
+	if err != nil {
+		fmt.Println(err)
+	}
+	//Retrieve token from Header
+	token, err := jwt.ParseWithClaims(headerToken, &UserTest{}, func(token *jwt.Token) (interface{}, error) {
+		return verifyKey, nil
+	})
+
+	if err != nil {
+		fmt.Println(err)
+	}
+	context.Set(r, "user_info", token.Claims)
+	fmt.Println(token.Claims.(*UserTest).UserName)
+	return nil
 }
