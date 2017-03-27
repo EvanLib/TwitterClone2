@@ -1,8 +1,6 @@
 package models
 
 import (
-	"fmt"
-
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jinzhu/gorm"
 	"golang.org/x/crypto/bcrypt"
@@ -52,7 +50,6 @@ func (ug *UserGorm) ByID(id uint) *User {
 }
 
 func (ug *UserGorm) ByEmail(email string) *User {
-	fmt.Println(email)
 	return ug.byQuery(ug.DB.Where("email = ?", email))
 }
 
@@ -63,7 +60,6 @@ func (ug *UserGorm) byQuery(query *gorm.DB) *User {
 	case nil:
 		return ret
 	case gorm.ErrRecordNotFound:
-		fmt.Println(err)
 		return nil
 	default:
 		panic(err)

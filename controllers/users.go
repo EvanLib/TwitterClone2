@@ -71,8 +71,7 @@ func (u *Users) Login(w http.ResponseWriter, r *http.Request) {
 
 	user := u.Authenticate(userJSON.Email, userJSON.Password)
 	if user == nil {
-		w.WriteHeader(http.StatusForbidden)
-		fmt.Fprintln(w, "Wrong info")
+		http.Error(w, "No user found.", http.StatusUnauthorized)
 		return
 	}
 

@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/auth0/go-jwt-middleware"
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/dgrijalva/jwt-go/request"
 	"github.com/gorilla/context"
@@ -24,10 +23,6 @@ var (
 	verifyKey *rsa.PublicKey
 	signKey   *rsa.PrivateKey
 )
-
-type MiddleWare struct {
-	*jwtmiddleware.JWTMiddleware
-}
 
 func init() {
 	signBytes, err := ioutil.ReadFile(privKeyPath)
@@ -59,18 +54,6 @@ type UserTest struct {
 }
 
 //Midleware
-func NewJWTMiddleWare() *MiddleWare {
-	jwtMiddleware := jwtmiddleware.New(jwtmiddleware.Options{
-		ValidationKeyGetter: func(token *jwt.Token) (interface{}, error) {
-			return verifyKey, nil
-		},
-		SigningMethod: jwt.SigningMethodRS256,
-	})
-
-	return &MiddleWare{
-		JWTMiddleware: jwtMiddleware,
-	}
-}
 
 //Token
 func CreateToken(username string, id uint) (string, error) {
@@ -148,6 +131,15 @@ func RestrictedHandler(w http.ResponseWriter, r *http.Request) {
 func HandlerWithNext(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
 	err := JWTAuth(w, r)
 
+	//Handle error
+	if ve, ok := err.(*jwt.ValidationError); ok {
+		log.Println("Token error: not a valid token. ")
+		http.Error(w, ve.Error(), http.StatusUnauthorized)
+	} else if ve.Errors&(jwt.ValidationErrorExpired|jwt.ValidationErrorNotValidYet) != 0 {
+		log.Println("Token Error: time expired")
+	} else {
+		log.Println("Token error: the token couldn't be handled.")
+	}
 	// If there was an error, do not call next.
 	if err == nil && next != nil {
 		next(w, r)
@@ -172,7 +164,8 @@ func FromAuthHeader(r *http.Request) (string, error) {
 //Auth user via token
 //Set Claims as context
 func JWTAuth(w http.ResponseWriter, r *http.Request) error {
-	//
+
+	//Retrive header information.
 	headerToken, err := FromAuthHeader(r)
 	if err != nil {
 		fmt.Println(err)
@@ -183,8 +176,9 @@ func JWTAuth(w http.ResponseWriter, r *http.Request) error {
 	})
 
 	if err != nil {
-		fmt.Println(err)
+		return err
 	}
+
 	context.Set(r, "user_info", token.Claims)
 	fmt.Println(token.Claims.(*UserTest).UserName)
 	return nil
