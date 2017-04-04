@@ -9,6 +9,7 @@ import (
 	"github.com/EvanLib/TwitterClone2/authentication"
 	"github.com/EvanLib/TwitterClone2/models"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/gorilla/context"
 )
 
 type Users struct {
@@ -92,8 +93,18 @@ func (u *Users) Login(w http.ResponseWriter, r *http.Request) {
 	w.Write(b)
 
 }
+func (u *Users) Logout(w http.ResponseWriter, r *http.Request) {
+	//Gra b token Header
+	userContext := context.Get(r, "user_info")
+	fmt.Println(userContext)
+	// TODO: write a handler for invalidating tokens. Redis backend maybe.
+
+	w.WriteHeader(http.StatusOK)
+
+}
 
 func (u *Users) signIn(w http.ResponseWriter, user *models.User) error {
+	//Strip JSON login package
 
 	return nil
 }

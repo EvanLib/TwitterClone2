@@ -47,7 +47,7 @@ func main() {
 
 	r.HandleFunc("/api/auth/create", usersController.Create)
 	r.HandleFunc("/api/auth/login", usersController.Login).Methods("POST")
-
+	r.HandleFunc("/api/auth/logout", usersController.Logout).Methods("GET")
 	r.HandleFunc("/api/auth/tokenget", authentication.AuthHandler)
 	r.HandleFunc("/api/auth/login2", authentication.RestrictedHandler).Methods("POST")
 	r.HandleFunc("/api/auth/tokentest", authentication.RestrictedHandler)
