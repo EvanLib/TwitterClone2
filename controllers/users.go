@@ -94,11 +94,13 @@ func (u *Users) Login(w http.ResponseWriter, r *http.Request) {
 
 }
 func (u *Users) Logout(w http.ResponseWriter, r *http.Request) {
-	//Gra b token Header
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	fmt.Println("Logout Called")
+	//User info from context
 	userContext := context.Get(r, "user_info")
 	fmt.Println(userContext)
 	// TODO: write a handler for invalidating tokens. Redis backend maybe.
-
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 
 }
