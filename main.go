@@ -18,8 +18,8 @@ func main() {
 	//Auth testing
 
 	//Database gorm stuff
-	tg, err := models.NewTweetGorm("root:somepassword@/twitter_clone?charset=utf8&parseTime=True&loc=Local")
-	ug, err := models.NewUserGorm("root:somepassword@/twitter_clone?charset=utf8&parseTime=True&loc=Local")
+	tg, err := models.NewTweetGorm("root:lol626465@/twitter_clone?charset=utf8&parseTime=True&loc=Local")
+	ug, err := models.NewUserGorm("root:lol626465@/twitter_clone?charset=utf8&parseTime=True&loc=Local")
 	if err != nil {
 		panic(err)
 	}
@@ -45,9 +45,15 @@ func main() {
 		negroni.Wrap(http.HandlerFunc(tweetsController.Create)),
 	)).Methods("POST")
 
+	//Accounnt CRUD
 	r.HandleFunc("/api/auth/create", usersController.Create)
 	r.HandleFunc("/api/auth/login", usersController.Login).Methods("POST")
-	r.HandleFunc("/api/auth/logout", usersController.Logout).Methods("GET")
+	r.Handle("/api/auth/logout", negroni.New(
+		negroni.HandlerFunc(authentication.HandlerWithNext),
+		negroni.Wrap(http.HandlerFunc(usersController.Logout)),
+	)).Methods("DELETE")
+
+	//JWT Token Auth
 	r.HandleFunc("/api/auth/tokenget", authentication.AuthHandler)
 	r.HandleFunc("/api/auth/login2", authentication.RestrictedHandler).Methods("POST")
 	r.HandleFunc("/api/auth/tokentest", authentication.RestrictedHandler)

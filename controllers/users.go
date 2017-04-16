@@ -102,7 +102,6 @@ func (u *Users) Logout(w http.ResponseWriter, r *http.Request) {
 	// TODO: write a handler for invalidating tokens. Redis backend maybe.
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-
 }
 
 func (u *Users) signIn(w http.ResponseWriter, user *models.User) error {

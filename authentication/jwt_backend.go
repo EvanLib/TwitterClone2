@@ -137,8 +137,10 @@ func HandlerWithNext(w http.ResponseWriter, r *http.Request, next http.HandlerFu
 		http.Error(w, ve.Error(), http.StatusUnauthorized)
 	} else if ve.Errors&(jwt.ValidationErrorExpired|jwt.ValidationErrorNotValidYet) != 0 {
 		log.Println("Token Error: time expired")
+		http.Error(w, ve.Error(), http.StatusUnauthorized)
 	} else {
 		log.Println("Token error: the token couldn't be handled.")
+		http.Error(w, ve.Error(), http.StatusUnauthorized)
 	}
 	// If there was an error, do not call next.
 	if err == nil && next != nil {
@@ -176,6 +178,7 @@ func JWTAuth(w http.ResponseWriter, r *http.Request) error {
 	})
 
 	if err != nil {
+		fmt.Println(err)
 		return err
 	}
 
