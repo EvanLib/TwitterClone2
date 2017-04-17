@@ -107,6 +107,7 @@ func AuthHandler(w http.ResponseWriter, r *http.Request) {
 	// fmt.Fprintln(w, tokenString)
 }
 func RestrictedHandler(w http.ResponseWriter, r *http.Request) {
+
 	// Get token from request
 	token, err := request.ParseFromRequestWithClaims(r, request.OAuth2Extractor, &UserTest{}, func(token *jwt.Token) (interface{}, error) {
 		// since we only use the one private key to sign the tokens,
@@ -129,18 +130,12 @@ func RestrictedHandler(w http.ResponseWriter, r *http.Request) {
 
 //Negroni function for middleware
 func HandlerWithNext(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
-	err := JWTAuth(w, r)
+	fmt.Println("Called HandlerWithNext")
 
-	//Handle error
-	if ve, ok := err.(*jwt.ValidationError); ok {
-		log.Println("Token error: not a valid token. ")
-		http.Error(w, ve.Error(), http.StatusUnauthorized)
-	} else if ve.Errors&(jwt.ValidationErrorExpired|jwt.ValidationErrorNotValidYet) != 0 {
-		log.Println("Token Error: time expired")
-		http.Error(w, ve.Error(), http.StatusUnauthorized)
-	} else {
-		log.Println("Token error: the token couldn't be handled.")
-		http.Error(w, ve.Error(), http.StatusUnauthorized)
+	err := JWTAuth(w, r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
 	}
 	// If there was an error, do not call next.
 	if err == nil && next != nil {
@@ -166,20 +161,31 @@ func FromAuthHeader(r *http.Request) (string, error) {
 //Auth user via token
 //Set Claims as context
 func JWTAuth(w http.ResponseWriter, r *http.Request) error {
-
 	//Retrive header information.
 	headerToken, err := FromAuthHeader(r)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Printf("Error retrieving token : %v", err)
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return err
 	}
-	//Retrieve token from Header
+
+	//Parse Token
 	token, err := jwt.ParseWithClaims(headerToken, &UserTest{}, func(token *jwt.Token) (interface{}, error) {
+		// Don't forget to validate the alg is what you expect:
+		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
+			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+		}
+
 		return verifyKey, nil
 	})
 
 	if err != nil {
 		fmt.Println(err)
 		return err
+	}
+	if !token.Valid {
+		fmt.Println("Token not valid.")
+		return fmt.Errorf("Token not valid.")
 	}
 
 	context.Set(r, "user_info", token.Claims)
