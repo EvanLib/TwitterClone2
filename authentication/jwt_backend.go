@@ -130,7 +130,7 @@ func RestrictedHandler(w http.ResponseWriter, r *http.Request) {
 
 //Negroni function for middleware
 func HandlerWithNext(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
-	fmt.Println("Called HandlerWithNext")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 
 	err := JWTAuth(w, r)
 	if err != nil {

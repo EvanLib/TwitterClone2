@@ -33,7 +33,6 @@ func main() {
 	tg.DatabaseStuff()
 	//Create mux
 	r := mux.NewRouter()
-	r.HandleFunc("/", Index)
 	r.HandleFunc("/api", Index)
 	r.Handle("/api/tweets", negroni.New(
 		negroni.HandlerFunc(authentication.HandlerWithNext),
@@ -60,8 +59,10 @@ func main() {
 	r.HandleFunc("/api/auth/tokentest", authentication.RestrictedHandler)
 
 	//Create the http server
+	http.Handle("/", &MyServer{r}) //Five days worth of searching
+
 	srv := &http.Server{
-		Handler: r,
+		Handler: nil,
 		Addr:    "127.0.0.1:3000",
 		//Good practive: enforce timeouts for servers you create...
 		WriteTimeout: 15 * time.Second,
@@ -74,4 +75,25 @@ func main() {
 func Index(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html")
 	fmt.Fprint(w, "API FOR A TWITTER CLONE. SO FUCK OFF.")
+}
+
+//Preflight Server stuff for CORS
+//http://stackoverflow.com/questions/12830095/setting-http-headers-in-golang
+type MyServer struct {
+	r *mux.Router
+}
+
+func (s *MyServer) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
+	if origin := req.Header.Get("Origin"); origin != "" {
+		rw.Header().Set("Access-Control-Allow-Origin", origin)
+		rw.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		rw.Header().Set("Access-Control-Allow-Headers",
+			"Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+	}
+	// Stop here if its Preflighted OPTIONS request
+	if req.Method == "OPTIONS" {
+		return
+	}
+	// Lets Gorilla work
+	s.r.ServeHTTP(rw, req)
 }
