@@ -18,12 +18,12 @@ func main() {
 	//Auth testing
 
 	//Database gorm stuff
-	tg, err := models.NewTweetGorm("root:somepassword@/twitter_clone?charset=utf8&parseTime=True&loc=Local")
-	ug, err := models.NewUserGorm("root:somepassword@/twitter_clone?charset=utf8&parseTime=True&loc=Local")
+	tg, err := models.NewTweetGorm("root:lol626465@/twitter_clone?charset=utf8&parseTime=True&loc=Local")
+	ug, err := models.NewUserGorm("root:lol626465@/twitter_clone?charset=utf8&parseTime=True&loc=Local")
 	if err != nil {
 		panic(err)
 	}
-	tg.Debug()
+	tg.DesctructiveReset()
 	ug.DestructiveReset()
 	//Create controllers
 	tweetsController := controllers.NewTweetsController(tg, ug)

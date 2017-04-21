@@ -2,15 +2,24 @@ package models
 
 import (
 	"fmt"
+	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jinzhu/gorm"
 )
 
+type publicTweet struct {
+	//Used for Json encoding
+
+}
 type Tweet struct {
-	gorm.Model //Gives id and interaction
-	Tweet      string
-	Likes      int
+	//gorm.Model        //Gives id and interaction
+	ID        uint       `gorm:"primary_key"json:"id"`
+	CreatedAt time.Time  ``
+	UpdatedAt time.Time  `json:"-"`
+	DeletedAt *time.Time `sql:"index"`
+	Tweet     string     `json:"tweet"`
+	Likes     int        `json:"likes"`
 }
 
 type TweetGorm struct {
