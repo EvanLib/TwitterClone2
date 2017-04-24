@@ -10,11 +10,10 @@ var userPwPerpper = "SOMETHING DUMB AND SCRETE"
 
 type User struct {
 	gorm.Model
-	Name           string
 	Email          string  `gorm:"not null;unique_index"`
 	Password       string  `gorm:"-"`
 	HashedPassword string  `gorm:"not null"`
-	Tweets         []Tweet `gorm:"many2many:user_tweets"`
+	Profile        Profile `gorm:"not null"`
 }
 
 type UserService interface {
@@ -24,7 +23,6 @@ type UserService interface {
 	Update(user *User) error
 	Delete(id uint) error
 	Authenticate(email, password string) *User
-	AddTweet(user *User, tweet *Tweet)
 }
 
 type UserGorm struct {
@@ -34,14 +32,11 @@ type UserGorm struct {
 func (ug *UserGorm) DestructiveReset() {
 	//ug.DropTable(&User{})
 	ug.AutoMigrate(&User{})
+	ug.AutoMigrate(&Profile{})
 }
 
-func NewUserGorm(connectionInfo string) (*UserGorm, error) {
-	db, err := gorm.Open("mysql", connectionInfo)
-	if err != nil {
-		return nil, err
-	}
-	return &UserGorm{db}, nil
+func NewUserGorm(db *gorm.DB) *UserGorm {
+	return &UserGorm{db}
 }
 
 func (ug *UserGorm) ByID(id uint) *User {
@@ -58,6 +53,7 @@ func (ug *UserGorm) byQuery(query *gorm.DB) *User {
 	err := query.First(ret).Error
 	switch err {
 	case nil:
+		ug.Model(&ret).Related(&ret.Profile, "Profile")
 		return ret
 	case gorm.ErrRecordNotFound:
 		return nil
@@ -98,11 +94,4 @@ func (ug *UserGorm) Authenticate(email, password string) *User {
 		return nil
 	}
 	return foundUser
-}
-
-//Tweet Functions
-
-func (ug *UserGorm) AddTweet(user *User, tweet *Tweet) {
-	ug.Model(&user).Association("Tweets")
-	ug.Model(&user).Association("Tweets").Append(tweet)
 }

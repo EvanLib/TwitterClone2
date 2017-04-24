@@ -1,5 +1,5 @@
 -authentication
---Create controller interface
+
 
 
 -Tweets
@@ -7,3 +7,16 @@
 ---Likes
 ---Delete
 ---Comment?
+
+-Users
+--controllers
+---registration
+---Correct syntax for accounts: username, email, password.
+--Profiles
+--CRUD
+
+
+--Clean UP code segments
+---SQLI
+---Random HTTP Reponse Headings
+---Non used functions

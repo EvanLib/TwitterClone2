@@ -8,18 +8,16 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
-type publicTweet struct {
-	//Used for Json encoding
-
-}
 type Tweet struct {
 	//gorm.Model        //Gives id and interaction
-	ID        uint       `gorm:"primary_key"json:"id"`
+	ID        uint       `gorm:"primary_key" json:"id"`
 	CreatedAt time.Time  ``
 	UpdatedAt time.Time  `json:"-"`
 	DeletedAt *time.Time `sql:"index"`
 	Tweet     string     `json:"tweet"`
 	Likes     int        `json:"likes"`
+	ProfileID uint
+	Profile   Profile
 }
 
 type TweetGorm struct {
@@ -47,15 +45,12 @@ func (tg *TweetGorm) DatabaseStuff() {
 	fmt.Println("Tweets Database loaded....")
 	//tg.CreateMockTweets()
 }
-func NewTweetGorm(connectionInfo string) (*TweetGorm, error) {
-	db, err := gorm.Open("mysql", connectionInfo)
-	if err != nil {
-		return nil, err
-	}
-	return &TweetGorm{db}, nil
+func NewTweetGorm(db *gorm.DB) *TweetGorm {
+	return &TweetGorm{db}
 }
 
 func (tg *TweetGorm) DesctructiveReset() {
+	//tg.DropTable(Tweet{})
 	tg.AutoMigrate(Tweet{})
 }
 

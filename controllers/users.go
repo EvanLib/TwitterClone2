@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/EvanLib/TwitterClone2/authentication"
 	"github.com/EvanLib/TwitterClone2/models"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/context"
+	"github.com/gorilla/mux"
 )
 
 type Users struct {
@@ -21,15 +23,7 @@ type UserJSON struct {
 	Password string `json:"password"`
 }
 
-type SignupForm struct {
-	Name     string `schema:"name"`
-	Email    string `schema:"email"`
-	Password string `schema:"password"`
-}
-type LoginForm struct {
-	Email    string `schema:"email"`
-	Password string `schema:"password"`
-}
+//CRUD
 
 func NewUsers(us models.UserService) *Users {
 	return &Users{
@@ -42,9 +36,12 @@ func NewUsers(us models.UserService) *Users {
 func (u *Users) Create(w http.ResponseWriter, r *http.Request) {
 
 	user := &models.User{
-		Name:     "Evan Grayson",
 		Email:    "Evan@evandoesstuff.com",
 		Password: "Somepass",
+		Profile: models.Profile{
+			Name:     "Evan Grayson",
+			UserName: "Twiggy_io",
+		},
 	}
 
 	if err := u.UserService.Create(user); err != nil {
@@ -59,7 +56,6 @@ func (u *Users) Create(w http.ResponseWriter, r *http.Request) {
 
 //Authentication
 func (u *Users) Login(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 
 	var userJSON UserJSON
 	decoder := json.NewDecoder(r.Body)
@@ -76,19 +72,19 @@ func (u *Users) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tokenString, err := authentication.CreateToken(user.Email, user.ID)
+	tokenString, err := authentication.CreateToken(user.Email, user.ID, user.Profile.ID)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintln(w, "Sorry, error while Signing Token!")
 		log.Printf("Token Signing error: %v\n", err)
 		return
 	}
-
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Content-Type", "application/jwt")
 	w.WriteHeader(http.StatusOK)
+
 	b, err := json.Marshal(map[string]string{
-		"token": tokenString,
+		"token":    tokenString,
+		"username": user.Profile.UserName, // Fix the Profile
 	})
 	w.Write(b)
 
@@ -108,4 +104,31 @@ func (u *Users) signIn(w http.ResponseWriter, user *models.User) error {
 	//Strip JSON login package
 
 	return nil
+}
+
+//CRUD For Profiles
+func (u *Users) GetProfile(w http.ResponseWriter, r *http.Request) {
+	//Grab the ID
+	vars := mux.Vars(r)
+	id, err := strconv.ParseUint(vars["id"], 10, 0)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	//Find user from ID
+	user := u.ByID(uint(id))
+	if user == nil {
+		http.Error(w, "ID not found", http.StatusNotFound)
+		return
+	}
+
+	//Put into json
+	jasonData, err := json.Marshal(user.Profile)
+	if err != nil {
+		panic(err)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(jasonData)
 }

@@ -49,14 +49,15 @@ func init() {
 
 type UserTest struct {
 	*jwt.StandardClaims
-	ID       uint   `json:"id"`
-	UserName string `json:"username"`
+	ID        uint   `json:"id"`
+	UserName  string `json:"username"`
+	ProfileID uint   `json:"profileid"`
 }
 
 //Midleware
 
 //Token
-func CreateToken(username string, id uint) (string, error) {
+func CreateToken(username string, id uint, profileid uint) (string, error) {
 	// create a signer for rsa 256
 	t := jwt.New(jwt.GetSigningMethod("RS256"))
 
@@ -69,43 +70,13 @@ func CreateToken(username string, id uint) (string, error) {
 		},
 		id,
 		username,
+		profileid,
 	}
 
 	// Creat token string
 	return t.SignedString(signKey)
 }
-func AuthHandler(w http.ResponseWriter, r *http.Request) {
-	// make sure its post
-	// if r.Method != "POST" {
-	// 	w.WriteHeader(http.StatusBadRequest)
-	// 	fmt.Fprintln(w, "No POST", r.Method)
-	// 	return
-	// }
-	//
-	// user := r.FormValue("user")
-	// pass := r.FormValue("pass")
-	//
-	// log.Printf("Authenticate: user[%s] pass[%s]\n", user, pass)
-	//
-	// // check values
-	// if user != "test" || pass != "known" {
-	// 	w.WriteHeader(http.StatusForbidden)
-	// 	fmt.Fprintln(w, "Wrong info")
-	// 	return
-	// }
-	//
-	// tokenString, err := CreateToken(user)
-	// if err != nil {
-	// 	w.WriteHeader(http.StatusInternalServerError)
-	// 	fmt.Fprintln(w, "Sorry, error while Signing Token!")
-	// 	log.Printf("Token Signing error: %v\n", err)
-	// 	return
-	// }
 
-	// w.Header().Set("Content-Type", "application/jwt")
-	// w.WriteHeader(http.StatusOK)
-	// fmt.Fprintln(w, tokenString)
-}
 func RestrictedHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Get token from request

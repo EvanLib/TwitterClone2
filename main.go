@@ -11,6 +11,7 @@ import (
 	"github.com/EvanLib/TwitterClone2/models"
 	"github.com/codegangsta/negroni"
 	"github.com/gorilla/mux"
+	"github.com/jinzhu/gorm"
 )
 
 func main() {
@@ -18,15 +19,19 @@ func main() {
 	//Auth testing
 
 	//Database gorm stuff
-	tg, err := models.NewTweetGorm("root:lol626465@/twitter_clone?charset=utf8&parseTime=True&loc=Local")
-	ug, err := models.NewUserGorm("root:lol626465@/twitter_clone?charset=utf8&parseTime=True&loc=Local")
+	db, err := gorm.Open("mysql", "root:somepassword@/twitter_clone?charset=utf8&parseTime=True&loc=Local")
 	if err != nil {
 		panic(err)
 	}
+
+	tg := models.NewTweetGorm(db)
+	ug := models.NewUserGorm(db)
+	pg := models.NewProfileGorm(db)
+
 	tg.DesctructiveReset()
 	ug.DestructiveReset()
 	//Create controllers
-	tweetsController := controllers.NewTweetsController(tg, ug)
+	tweetsController := controllers.NewTweetsController(tg, pg)
 	usersController := controllers.NewUsers(ug)
 	//Negroni middleware
 
@@ -37,6 +42,11 @@ func main() {
 	r.Handle("/api/tweets", negroni.New(
 		negroni.HandlerFunc(authentication.HandlerWithNext),
 		negroni.Wrap(http.HandlerFunc(tweetsController.Index)),
+	)).Methods("GET")
+
+	r.Handle("/api/tweets/{id:[0-9]+}", negroni.New(
+		negroni.HandlerFunc(authentication.HandlerWithNext),
+		negroni.Wrap(http.HandlerFunc(tweetsController.Get)),
 	)).Methods("GET")
 
 	r.Handle("/api/tweets", negroni.New(
@@ -52,9 +62,13 @@ func main() {
 		negroni.HandlerFunc(authentication.HandlerWithNext),
 		negroni.Wrap(http.HandlerFunc(usersController.Logout)),
 	)).Methods("DELETE")
+	//Profile CRUD
+	r.Handle("/api/profile/{id:[0-9]+}", negroni.New(
+		negroni.HandlerFunc(authentication.HandlerWithNext),
+		negroni.Wrap(http.HandlerFunc(usersController.GetProfile)),
+	)).Methods("GET")
 
 	//JWT Token Auth
-	r.HandleFunc("/api/auth/tokenget", authentication.AuthHandler)
 	r.HandleFunc("/api/auth/login2", authentication.RestrictedHandler).Methods("POST")
 	r.HandleFunc("/api/auth/tokentest", authentication.RestrictedHandler)
 
