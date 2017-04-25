@@ -3,6 +3,7 @@ package controllers
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -15,6 +16,10 @@ import (
 type Tweets struct {
 	models.TweetService
 	models.ProfileService
+}
+
+type TweetJSON struct {
+	Tweet string `json:"tweet"`
 }
 
 func NewTweetsController(tweetsService models.TweetService, profileService models.ProfileService) *Tweets {
@@ -74,12 +79,20 @@ func (t Tweets) Create(w http.ResponseWriter, r *http.Request) {
 	userJWT := userContext.(*authentication.UserTest)
 
 	//Create Tweet
-	tweet := models.Tweet{
-		Tweet: "test tweet",
-		Likes: 100,
+	var tweetJSON TweetJSON
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&tweetJSON)
+
+	if err != nil {
+		log.Println("API Tweet ERROR: ", err)
+		return
 	}
 
-	err := t.TweetService.CreateTweet(&tweet)
+	tweet := models.Tweet{
+		Tweet: tweetJSON.Tweet,
+		Likes: 0,
+	}
+	err = t.TweetService.CreateTweet(&tweet)
 	if err != nil {
 		fmt.Println(err)
 	}

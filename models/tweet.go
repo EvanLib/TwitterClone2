@@ -11,7 +11,7 @@ import (
 type Tweet struct {
 	//gorm.Model        //Gives id and interaction
 	ID        uint       `gorm:"primary_key" json:"id"`
-	CreatedAt time.Time  ``
+	CreatedAt time.Time  `json:"created_at"`
 	UpdatedAt time.Time  `json:"-"`
 	DeletedAt *time.Time `sql:"index"`
 	Tweet     string     `json:"tweet"`
