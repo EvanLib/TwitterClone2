@@ -1,13 +1,20 @@
 package models
 
-import "github.com/jinzhu/gorm"
+import (
+	"time"
+
+	"github.com/jinzhu/gorm"
+)
 
 type Profile struct {
-	gorm.Model
-	UserID   uint    `json:"-"`
-	Name     string  `gorm:"not null" json:"name"`
-	UserName string  `gorm:"not null" json:"username"`
-	Tweets   []Tweet `json:"-"`
+	ID        uint       `gorm:"primary_key" json:"id"`
+	CreatedAt time.Time  `json:"created_at"`
+	UpdatedAt time.Time  `json:"-"`
+	DeletedAt *time.Time `sql:"index"`
+	UserID    uint       `json:"-"`
+	Name      string     `gorm:"not null" json:"name"`
+	UserName  string     `gorm:"not null" json:"username"`
+	Tweets    []Tweet    `json:"-"`
 }
 
 type ProfileService interface {
@@ -48,6 +55,6 @@ func (pg *ProfileGorm) Update(profile *Profile) error {
 	return pg.DB.Save(profile).Error
 }
 func (pg *ProfileGorm) Delete(id uint) error {
-	profile := &Profile{Model: gorm.Model{ID: id}}
+	profile := &Profile{ID: id}
 	return pg.DB.Delete(profile).Error
 }

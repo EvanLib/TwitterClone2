@@ -17,7 +17,7 @@ type Tweet struct {
 	Tweet     string     `json:"tweet"`
 	Likes     int        `json:"likes"`
 	ProfileID uint
-	Profile   Profile
+	Profile   Profile `json:"profile"`
 }
 
 type TweetGorm struct {
